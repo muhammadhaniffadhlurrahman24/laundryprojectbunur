@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
 
   const login = (username, password) => {
     // Simple admin authentication
-    if (username === 'admin' && password === 'admin') {
+    if (username === 'admin' && password === 'admin111111') {
       setIsLoggedIn(true);
       setUsername(username);
       localStorage.setItem('auth', JSON.stringify({ isLoggedIn: true, username }));

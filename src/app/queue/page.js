@@ -177,8 +177,8 @@ export default function QueuePage() {
                             className="w-full border rounded px-1 py-1 mb-1"
                           >
                             <option value="Proses">Proses</option>
-                            <option value="Selesai">Selesai</option>
                             <option value="Tinggal Ambil">Tinggal Ambil</option>
+                            <option value="Selesai">Selesai</option>
                           </select>
 
                           <button

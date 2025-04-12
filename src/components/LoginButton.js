@@ -25,7 +25,7 @@ export default function LoginButton() {
   return (
     <div className="absolute top-4 right-4">
       {isLoggedIn ? (
-        <div className="flex items-center gap-2 text-[#328e6e]">
+        <div className="flex items-center gap-2 text-white">
           <span>Hai, {loggedInUser}</span>
           <button
             onClick={logout}

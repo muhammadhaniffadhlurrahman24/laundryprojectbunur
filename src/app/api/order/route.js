@@ -29,18 +29,15 @@ export async function POST(req) {
     const nomorUrut = (countToday + 1).toString().padStart(3, '0');
     const kodeOrder = `ORD-${yyyyMMdd}-${nomorUrut}`;
 
-
-    // Harga per kg (bisa kamu ganti nanti dari setting di database)
+    // Harga per kg (bisa kamu ganti dari setting di DB nantinya)
     const hargaPerKg = {
       'Cuci + Setrika': 6000,
       'Hanya Setrika': 4000,
     };
 
-    // Hitung harga total
     const harga = data.berat * (hargaPerKg[data.tipe] || 0);
 
-
-    //Simpan ke database
+    // Simpan ke database
     await orders.insertOne({
       kodeOrder,
       nama: data.nama,
@@ -52,15 +49,14 @@ export async function POST(req) {
       harga,
       createdAt: now,
     });
-    
 
-    // Format nomor hp pelanggan
+    // Format nomor WhatsApp
     const target = data.noHp.startsWith('0')
       ? '62' + data.noHp.slice(1)
       : data.noHp;
 
-    // Kirim WhatsApp ke pelanggan
-    const message = `Hai ${data.nama}, order kamu telah kami terima!\n\nKode Order: ${kodeOrder}\nBerat: ${data.berat} kg\n\nTerima kasih telah menggunakan layanan laundry kami! \n\nUntuk melihat antrian Anda, silahkan kunjungi https://laundryprojectbunur.vercel.app/`;
+    // Kirim WA ke pelanggan
+    const message = `Hai ${data.nama}, order kamu telah kami terima!\n\nKode Order: ${kodeOrder}\nTipe: ${data.tipe}\nCatatan: ${data.catatan}\n\nTerima kasih telah menggunakan layanan laundry kami! \n\nUntuk melihat antrian Anda, silahkan kunjungi https://laundryprojectbunur.vercel.app/`;
 
     await fetch('https://api.fonnte.com/send', {
       method: 'POST',
@@ -68,13 +64,10 @@ export async function POST(req) {
         Authorization: process.env.FONNTE_TOKEN,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        target,
-        message,
-      }),
+      body: JSON.stringify({ target, message }),
     });
 
-    // Kirim WhatsApp ke admin
+    // WA ke admin
     const adminMessage = `🛎️ Order Baru Masuk!\n\nNama: ${data.nama}\nNo HP: ${data.noHp}\nBerat: ${data.berat} kg\nHarga: ${harga}\nTipe: ${data.tipe}\nKode Order: ${kodeOrder}\nCatatan: ${data.catatan}`;
 
     await fetch('https://api.fonnte.com/send', {
@@ -96,9 +89,7 @@ export async function POST(req) {
   } catch (err) {
     console.error('MongoDB or WhatsApp Error:', err);
     return new Response(
-      JSON.stringify({
-        message: 'Gagal menyimpan ke database atau kirim WhatsApp.',
-      }),
+      JSON.stringify({ message: 'Gagal menyimpan ke database atau kirim WhatsApp.' }),
       { status: 500 }
     );
   }
@@ -117,54 +108,53 @@ export async function GET() {
     return new Response(JSON.stringify({ orders }), { status: 200 });
   } catch (err) {
     console.error('Error ambil order:', err);
-    return new Response(
-      JSON.stringify({ message: 'Gagal ambil data.' }),
-      { status: 500 }
-    );
+    return new Response(JSON.stringify({ message: 'Gagal ambil data.' }), { status: 500 });
   }
 }
 
-// Handler untuk update status order (PATCH request)
 export async function PATCH(req) {
   try {
-    const { kodeOrder, status } = await req.json();
-    
-    if (!kodeOrder || !status) {
-      return new Response(JSON.stringify({ message: 'Data tidak lengkap' }), { 
-        status: 400 
+    const { kodeOrder, status, berat, harga } = await req.json();
+
+    if (!kodeOrder) {
+      return new Response(JSON.stringify({ message: 'Kode order diperlukan' }), {
+        status: 400,
       });
     }
+
+    const updateFields = {};
+    if (status !== undefined) updateFields.status = status;
+    if (berat !== undefined) updateFields.berat = berat;
+    if (harga !== undefined) updateFields.harga = harga;
 
     const client = await clientPromise;
     const db = client.db('laundrydb');
     const result = await db.collection('orders').updateOne(
       { kodeOrder },
-      { $set: { status } }
+      { $set: updateFields }
     );
 
     if (result.matchedCount === 0) {
-      return new Response(JSON.stringify({ message: 'Order tidak ditemukan' }), { 
-        status: 404 
+      return new Response(JSON.stringify({ message: 'Order tidak ditemukan' }), {
+        status: 404,
       });
     }
 
-    // Ambil data order yang diupdate
     const updatedOrder = await db.collection('orders').findOne({ kodeOrder });
-    
-    // Kirim notifikasi WhatsApp ke pelanggan jika status berubah
-    if (updatedOrder && updatedOrder.noHp) {
+
+    // Kirim WA hanya kalau ada perubahan status
+    if (status && updatedOrder && updatedOrder.noHp) {
       const target = updatedOrder.noHp.startsWith('0')
         ? '62' + updatedOrder.noHp.slice(1)
         : updatedOrder.noHp;
-      
+
       let statusMessage = '';
       if (status === 'Selesai') {
-        statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah SELESAI!\n\nTerima kasih telah menggunakan layanan kami. Sampai jumpa kembali!`;
+        statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah SELESAI!\n\nTerima kasih telah menggunakan layanan kami.`;
       } else if (status === 'Tinggal Ambil') {
-        statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah Selesai dan siap diambil.\n\nTerima kasih telah menggunakan layanan kami.`;
+        statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah SELESAI dan siap DIAMBIL.\n\nBerat: ${updatedOrder.berat} kg\nTotal Biaya: Rp ${updatedOrder.harga.toLocaleString('id-ID')}\n\nTerima kasih telah menggunakan layanan kami.`;
       }
-      
-      // Kirim pesan hanya jika status Selesai atau Tinggal Ambil
+
       if (statusMessage) {
         await fetch('https://api.fonnte.com/send', {
           method: 'POST',
@@ -172,22 +162,22 @@ export async function PATCH(req) {
             Authorization: process.env.FONNTE_TOKEN,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            target,
-            message: statusMessage,
-          }),
+          body: JSON.stringify({ target, message: statusMessage }),
         });
       }
     }
 
-    return new Response(JSON.stringify({ 
-      message: 'Status berhasil diupdate',
-      order: updatedOrder
-    }), { status: 200 });
-  } catch (err) {
-    console.error('Error update status:', err);
     return new Response(
-      JSON.stringify({ message: 'Gagal update status order.' }),
+      JSON.stringify({
+        message: 'Order berhasil diupdate',
+        order: updatedOrder,
+      }),
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error('Error update order:', err);
+    return new Response(
+      JSON.stringify({ message: 'Gagal update order.' }),
       { status: 500 }
     );
   }
