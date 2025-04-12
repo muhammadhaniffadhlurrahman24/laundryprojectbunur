@@ -102,7 +102,6 @@ export default function OrderForm() {
             onChange={handleChange}
             placeholder="contoh: 0823xxxxxxxx"
             className="w-full border border-[#a3d98c] p-2 rounded bg-white text-black"
-            required
           />
         </div>
 

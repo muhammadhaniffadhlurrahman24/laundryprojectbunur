@@ -3,7 +3,7 @@ import clientPromise from '@/lib/mongodb';
 export async function POST(req) {
   const data = await req.json();
 
-  if (!data.nama || !data.noHp || !data.berat || !data.tipe) {
+  if (!data.nama || !data.berat || !data.tipe) {
     return new Response(JSON.stringify({ message: 'Data tidak lengkap' }), {
       status: 400,
     });
@@ -14,11 +14,9 @@ export async function POST(req) {
     const db = client.db('laundrydb');
     const orders = db.collection('orders');
 
-    // Ambil tanggal hari ini
     const now = new Date();
     const yyyyMMdd = now.toISOString().slice(0, 10).replace(/-/g, '');
 
-    // Hitung jumlah order hari ini
     const countToday = await orders.countDocuments({
       createdAt: {
         $gte: new Date(`${now.toISOString().slice(0, 10)}T00:00:00.000Z`),
@@ -29,7 +27,6 @@ export async function POST(req) {
     const nomorUrut = (countToday + 1).toString().padStart(3, '0');
     const kodeOrder = `ORD-${yyyyMMdd}-${nomorUrut}`;
 
-    // Harga per kg (bisa kamu ganti dari setting di DB nantinya)
     const hargaPerKg = {
       'Cuci + Setrika': 6000,
       'Hanya Setrika': 4000,
@@ -37,11 +34,10 @@ export async function POST(req) {
 
     const harga = data.berat * (hargaPerKg[data.tipe] || 0);
 
-    // Simpan ke database
     await orders.insertOne({
       kodeOrder,
       nama: data.nama,
-      noHp: data.noHp,
+      noHp: data.noHp || '',
       berat: data.berat,
       catatan: data.catatan || '',
       tipe: data.tipe,
@@ -50,25 +46,32 @@ export async function POST(req) {
       createdAt: now,
     });
 
-    // Format nomor WhatsApp
-    const target = data.noHp.startsWith('0')
-      ? '62' + data.noHp.slice(1)
-      : data.noHp;
+    // Validasi noHp
+    let isValidPhone = false;
+    let target = '';
 
-    // Kirim WA ke pelanggan
-    const message = `Hai ${data.nama}, order kamu telah kami terima!\n\nKode Order: ${kodeOrder}\nTipe: ${data.tipe}\nCatatan: ${data.catatan}\n\nTerima kasih telah menggunakan layanan laundry kami! \n\nUntuk melihat antrian Anda, silahkan kunjungi https://laundryprojectbunur.vercel.app/`;
+    if (data.noHp) {
+      const cleaned = data.noHp.replace(/\D/g, '');
+      if ((cleaned.startsWith('0') || cleaned.startsWith('62')) && cleaned.length >= 10) {
+        target = cleaned.startsWith('0') ? '62' + cleaned.slice(1) : cleaned;
+        isValidPhone = true;
+      }
+    }
 
-    await fetch('https://api.fonnte.com/send', {
-      method: 'POST',
-      headers: {
-        Authorization: process.env.FONNTE_TOKEN,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ target, message }),
-    });
+    if (isValidPhone) {
+      const message = `Hai ${data.nama}, order kamu telah kami terima!\n\nKode Order: ${kodeOrder}\nTipe: ${data.tipe}\nCatatan: ${data.catatan || '-'}\n\nTerima kasih telah menggunakan layanan laundry kami!\n\nUntuk melihat antrian Anda, silahkan kunjungi https://laundryprojectbunur.vercel.app/`;
 
-    // WA ke admin
-    const adminMessage = `🛎️ Order Baru Masuk!\n\nNama: ${data.nama}\nNo HP: ${data.noHp}\nBerat: ${data.berat} kg\nHarga: ${harga}\nTipe: ${data.tipe}\nKode Order: ${kodeOrder}\nCatatan: ${data.catatan}`;
+      await fetch('https://api.fonnte.com/send', {
+        method: 'POST',
+        headers: {
+          Authorization: process.env.FONNTE_TOKEN,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ target, message }),
+      });
+    }
+
+    const adminMessage = `🛎️ Order Baru Masuk!\n\nNama: ${data.nama}\nNo HP: ${data.noHp || '-'}\n${!isValidPhone && data.noHp ? '⚠️ Nomor WA pelanggan tidak valid, pesan tidak dikirim.\n' : ''}Berat: ${data.berat} kg\nHarga: Rp ${harga.toLocaleString('id-ID')}\nTipe: ${data.tipe}\nKode Order: ${kodeOrder}\nCatatan: ${data.catatan || '-'}`;
 
     await fetch('https://api.fonnte.com/send', {
       method: 'POST',
@@ -142,11 +145,11 @@ export async function PATCH(req) {
 
     const updatedOrder = await db.collection('orders').findOne({ kodeOrder });
 
-    // Kirim WA hanya kalau ada perubahan status
+    // Kirim WA hanya kalau ada perubahan status dan nomor valid
     if (status && updatedOrder && updatedOrder.noHp) {
-      const target = updatedOrder.noHp.startsWith('0')
-        ? '62' + updatedOrder.noHp.slice(1)
-        : updatedOrder.noHp;
+      const cleaned = updatedOrder.noHp.replace(/\D/g, '');
+      const isValid = (cleaned.startsWith('0') || cleaned.startsWith('62')) && cleaned.length >= 10;
+      const target = cleaned.startsWith('0') ? '62' + cleaned.slice(1) : cleaned;
 
       let statusMessage = '';
       if (status === 'Selesai') {
@@ -155,7 +158,7 @@ export async function PATCH(req) {
         statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah SELESAI dan siap DIAMBIL.\n\nBerat: ${updatedOrder.berat} kg\nTotal Biaya: Rp ${updatedOrder.harga.toLocaleString('id-ID')}\n\nTerima kasih telah menggunakan layanan kami.`;
       }
 
-      if (statusMessage) {
+      if (isValid && statusMessage) {
         await fetch('https://api.fonnte.com/send', {
           method: 'POST',
           headers: {
