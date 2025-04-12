@@ -59,7 +59,7 @@ export async function POST(req) {
     }
 
     if (isValidPhone) {
-      const message = `Hai ${data.nama}, order kamu telah kami terima!\n\nKode Order: ${kodeOrder}\nTipe: ${data.tipe}\nCatatan: ${data.catatan || '-'}\n\nTerima kasih telah menggunakan layanan laundry kami!\n\nUntuk melihat antrian Anda, silahkan kunjungi https://laundryprojectbunur.vercel.app/`;
+      const message = `Hai ${data.nama}, order kamu telah kami terima!\n\nKode Order: ${kodeOrder}\nTipe: ${data.tipe}\nCatatan: ${data.catatan || '-'}\n\nTerima kasih telah menggunakan layanan laundry kami!\n\nUntuk melihat antrian Anda, silahkan kunjungi https://laundrybunur.vercel.app/`;
 
       await fetch('https://api.fonnte.com/send', {
         method: 'POST',
