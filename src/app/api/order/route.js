@@ -60,7 +60,7 @@ export async function POST(req) {
       : data.noHp;
 
     // Kirim WhatsApp ke pelanggan
-    const message = `Hai ${data.nama}, order kamu telah kami terima!\n\nKode Order: ${kodeOrder}\nBerat: ${data.berat} kg\n\nTerima kasih telah menggunakan layanan laundry kami!`;
+    const message = `Hai ${data.nama}, order kamu telah kami terima!\n\nKode Order: ${kodeOrder}\nBerat: ${data.berat} kg\n\nTerima kasih telah menggunakan layanan laundry kami! \n\nUntuk melihat antrian Anda, silahkan kunjungi https://laundryprojectbunur.vercel.app/`;
 
     await fetch('https://api.fonnte.com/send', {
       method: 'POST',
@@ -75,7 +75,7 @@ export async function POST(req) {
     });
 
     // Kirim WhatsApp ke admin
-    const adminMessage = `🛎️ Order Baru Masuk!\n\nNama: ${data.nama}\nNo HP: ${data.noHp}\nBerat: ${data.berat} kg\nTipe: ${data.tipe}\nKode Order: ${kodeOrder}`;
+    const adminMessage = `🛎️ Order Baru Masuk!\n\nNama: ${data.nama}\nNo HP: ${data.noHp}\nBerat: ${data.berat} kg\nHarga: ${harga}\nTipe: ${data.tipe}\nKode Order: ${kodeOrder}\nCatatan: ${data.catatan}`;
 
     await fetch('https://api.fonnte.com/send', {
       method: 'POST',
@@ -159,9 +159,9 @@ export async function PATCH(req) {
       
       let statusMessage = '';
       if (status === 'Selesai') {
-        statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah SELESAI dan siap diambil!\n\nTerima kasih telah menggunakan layanan kami.`;
+        statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah SELESAI!\n\nTerima kasih telah menggunakan layanan kami. Sampai jumpa kembali!`;
       } else if (status === 'Tinggal Ambil') {
-        statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah DIAMBIL.\n\nTerima kasih telah menggunakan layanan kami. Sampai jumpa kembali!`;
+        statusMessage = `Hai ${updatedOrder.nama}, laundry Anda dengan kode order ${kodeOrder} telah Selesai dan siap diambil.\n\nTerima kasih telah menggunakan layanan kami.`;
       }
       
       // Kirim pesan hanya jika status Selesai atau Tinggal Ambil
