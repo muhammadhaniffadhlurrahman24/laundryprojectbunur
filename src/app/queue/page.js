@@ -21,7 +21,7 @@ export default function QueuePage() {
         setLoading(true);
         const res = await fetch('/api/order');
         const data = await res.json();
-        setOrders(data.orders);
+        setOrders(data.data);
       } catch (error) {
         console.error("Error fetching orders:", error);
       } finally {
@@ -39,18 +39,18 @@ export default function QueuePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kodeOrder, ...updates })
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Gagal update');
       }
-  
+
       const result = await response.json();
-  
+
       setOrders(orders.map(order =>
-        order.kodeOrder === kodeOrder ? result.order : order
+        order.kodeOrder === kodeOrder ? result.data : order
       ));
-  
+
       toast.success(`Order ${kodeOrder} berhasil disimpan`);
       setUpdateStatus({ loading: false, error: null });
     } catch (error) {
@@ -58,6 +58,11 @@ export default function QueuePage() {
       toast.error(`Gagal menyimpan order: ${error.message}`);
       setUpdateStatus({ loading: false, error: error.message });
     }
+  };
+
+  const capitalize = (text) => {
+    if (!text || typeof text !== 'string') return '-';
+    return text.charAt(0).toUpperCase() + text.slice(1);
   };
   
 
@@ -89,6 +94,8 @@ export default function QueuePage() {
                   <th className="py-2 px-4">Nama</th>
                   <th className="py-2 px-4">Berat (kg)</th>
                   <th className="py-2 px-4">Tipe</th>
+                  <th className="py-2 px-4">Order Type</th>
+                  <th className="py-2 px-4">Jenis</th>
                   <th className="py-2 px-4">Tanggal</th>
                   <th className="py-2 px-4">Status</th>
                   {isLoggedIn && <th className="py-2 px-4">Harga</th>}
@@ -107,37 +114,43 @@ export default function QueuePage() {
                   return (
                     <tr key={i} className="border-b hover:bg-[#f1f8e8]">
                       <td className="py-2 px-4">{order.kodeOrder}</td>
-                      <td className="py-2 px-4">{order.nama}</td>
+                      <td className="py-2 px-4">{capitalize(order.nama)}</td>
 
                       {/* Berat */}
                       <td className="py-2 px-4">
                         {isLoggedIn ? (
-                          <input
-                            type="number"
-                            value={order.berat}
-                            min={0}
-                            step="0.1"
-                            onChange={(e) => {
-                              const beratBaru = parseFloat(e.target.value);
-                              const hargaBaru = Math.round(beratBaru * (hargaPerKg[order.tipe] || 0));
-                              const newOrders = [...orders];
-                              newOrders[i].berat = beratBaru;
-                              newOrders[i].harga = hargaBaru;
-                              setOrders(newOrders);
-                            }}
-                            className="w-20 border px-2 py-1 rounded"
-                          />
+                          order.orderType !== 'satuan' ? (
+                            <input
+                              type="number"
+                              value={order.berat}
+                              min={0}
+                              step="0.1"
+                              onChange={(e) => {
+                                const beratBaru = parseFloat(e.target.value);
+                                const hargaBaru = Math.round(beratBaru * (hargaPerKg[order.tipe] || 0));
+                                const newOrders = [...orders];
+                                newOrders[i].berat = beratBaru;
+                                newOrders[i].harga = hargaBaru;
+                                setOrders(newOrders);
+                              }}
+                              className="w-20 border px-2 py-1 rounded"
+                            />
+                          ) : (
+                            <span className="text-gray-400 italic">-</span>
+                          )
                         ) : (
-                          `${order.berat} kg`
+                          order.orderType !== 'satuan' ? `${order.berat} kg` : '-'
                         )}
                       </td>
 
                       <td className="py-2 px-4">{order.tipe}</td>
+                      <td className="py-2 px-4">{capitalize(order.orderType)}</td>
+                      <td className="py-2 px-4">{capitalize(order.jenis)}</td>
                       <td className="py-2 px-4">{tanggal}, {jam}</td>
 
                       {/* Status */}
                       <td className="py-2 px-4">
-                        <span className={`px-2 py-1 rounded text-sm ${
+                        <span className={`px-2 py-1 rounded text-sm ${ 
                           order.status === 'Selesai'
                             ? 'bg-green-200 text-green-800'
                             : order.status === 'Tinggal Ambil'

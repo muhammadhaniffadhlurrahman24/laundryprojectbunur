@@ -45,7 +45,20 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
+  // Formatkan tanggal
+  const formatDate = (date) => {
+    const options = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false, // Format 24 jam
+    };
+    return new Date(date).toLocaleString('id-ID', options).replace(',', '');
+  };
 
+  // Export Order Data
   const exportOrderData = async () => {
     if (!startDate || !endDate) {
       alert('Mohon pilih tanggal awal dan akhir.');
@@ -58,6 +71,12 @@ export default function DashboardPage() {
       return;
     }
 
+    // Mengubah format tanggal pada setiap order
+    data.orders.forEach(order => {
+      order.createdAt = formatDate(order.createdAt);
+      order.updatedAt = formatDate(order.updatedAt);
+    });
+
     const worksheet = XLSX.utils.json_to_sheet(data.orders);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Order Detail');
@@ -66,6 +85,7 @@ export default function DashboardPage() {
     XLSX.writeFile(workbook, filename);
   };
 
+  // Export Income Data
   const exportIncomeData = async () => {
     if (!startDate || !endDate) {
       alert('Mohon pilih tanggal awal dan akhir.');
@@ -80,10 +100,11 @@ export default function DashboardPage() {
 
     const pendapatanHarian = {};
 
+    // Menghitung pendapatan harian dengan format tanggal
     data.orders
       .filter((order) => order.status === 'Selesai')
       .forEach((order) => {
-        const date = new Date(order.createdAt).toISOString().split('T')[0];
+        const date = formatDate(order.createdAt).split(' ')[0];  // Ambil hanya tanggal saja
         const harga = typeof order.harga === 'number' ? order.harga : parseInt(order.harga || '0');
         pendapatanHarian[date] = (pendapatanHarian[date] || 0) + harga;
       });
