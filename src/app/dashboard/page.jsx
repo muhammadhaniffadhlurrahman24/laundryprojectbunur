@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -45,7 +45,20 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
+  // Formatkan tanggal
+  const formatDate = (date) => {
+    const options = {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    };
+    return new Date(date).toLocaleString('id-ID', options).replace(',', '');
+  };
 
+  // Export Order Data
   const exportOrderData = async () => {
     if (!startDate || !endDate) {
       alert('Mohon pilih tanggal awal dan akhir.');
@@ -58,14 +71,58 @@ export default function DashboardPage() {
       return;
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(data.orders);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Order Detail');
+    // Format data
+    const formattedOrders = data.orders.map(order => ({
+      ...order,
+      createdAt: formatDate(order.createdAt),
+      updatedAt: formatDate(order.updatedAt)
+    }));
 
-    const filename = `order_laundry_${startDate}_to_${endDate}.xlsx`;
-    XLSX.writeFile(workbook, filename);
+    // Buat workbook baru
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Order Detail');
+
+    // Dapatkan nama kolom dari object pertama
+    const columns = Object.keys(formattedOrders[0]).map(key => ({
+      header: key,
+      key: key,
+      width: 15
+    }));
+
+    worksheet.columns = columns;
+
+    // Tambahkan data
+    worksheet.addRows(formattedOrders);
+
+    // Style untuk header
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: '5CE65C' }
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: 'FF000000' }
+      };
+      cell.alignment = {
+        vertical: 'middle',
+        horizontal: 'center'
+      };
+    });
+
+    // Generate dan download file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `order_laundry_${startDate}_to_${endDate}.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
+  // Export Income Data
   const exportIncomeData = async () => {
     if (!startDate || !endDate) {
       alert('Mohon pilih tanggal awal dan akhir.');
@@ -80,10 +137,11 @@ export default function DashboardPage() {
 
     const pendapatanHarian = {};
 
+    // Hitung pendapatan harian
     data.orders
       .filter((order) => order.status === 'Selesai')
       .forEach((order) => {
-        const date = new Date(order.createdAt).toISOString().split('T')[0];
+        const date = formatDate(order.createdAt).split(' ')[0];
         const harga = typeof order.harga === 'number' ? order.harga : parseInt(order.harga || '0');
         pendapatanHarian[date] = (pendapatanHarian[date] || 0) + harga;
       });
@@ -99,12 +157,48 @@ export default function DashboardPage() {
       Pendapatan: totalPendapatan,
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(incomeArray);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pendapatan Harian');
+    // Buat workbook baru
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Pendapatan Harian');
 
-    const filename = `pendapatan_laundry_${startDate}_to_${endDate}.xlsx`;
-    XLSX.writeFile(workbook, filename);
+    // Set kolom
+    worksheet.columns = [
+      { header: 'Tanggal', key: 'Tanggal', width: 15 },
+      { header: 'Pendapatan', key: 'Pendapatan', width: 15 }
+    ];
+
+    // Tambah data
+    worksheet.addRows(incomeArray);
+
+    // Style untuk header
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: '5CE65C' }
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: 'FF000000' }
+      };
+      cell.alignment = {
+        vertical: 'middle',
+        horizontal: 'center'
+      };
+    });
+
+    // Format kolom pendapatan sebagai currency
+    worksheet.getColumn('Pendapatan').numFmt = '"Rp"#,##0';
+
+    // Generate dan download file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pendapatan_laundry_${startDate}_to_${endDate}.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   return (
