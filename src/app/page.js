@@ -2,57 +2,61 @@
 import Link from 'next/link';
 import LoginButton from '@/components/LoginButton';
 import { useAuth } from '@/context/AuthContext';
+import { Sparkles } from 'lucide-react';
 
 export default function Home() {
   const { isLoggedIn } = useAuth();
 
   return (
-    <main className="min-h-screen bg-[#dce8b2] text-center relative">
+    <main className="min-h-screen bg-gradient-to-br from-[#f0fdf4] to-[#d7f0d6] font-sans text-gray-800">
 
       {/* NAVBAR */}
-      <nav className="w-full bg-[#328e6e] text-white px-6 py-4 flex justify-between items-center shadow-md">
+      <nav className="w-full bg-white/90 backdrop-blur-md border-b border-green-100 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50">
         <div className="w-1/3 text-left">
-          <h1 className="font-bold text-xl">Laundry App</h1>
+          <h1 className="font-bold text-2xl text-[#2e7d61] tracking-tight">Laundry App</h1>
         </div>
 
         <div className="w-1/3 text-center">
           {isLoggedIn && (
-            <Link href="/dashboard" className="text-white font-medium hover:underline">
+            <Link href="/dashboard" className="text-[#2e7d61] font-medium hover:underline">
               Dashboard
             </Link>
           )}
         </div>
 
-        <div className="w-1/3">
+        <div className="w-1/3 text-right">
           <LoginButton />
         </div>
       </nav>
 
       {/* Konten utama */}
-      <div className="flex flex-col items-center justify-center p-6 mt-10">
-        <h1 className="text-3xl font-bold mb-4 text-[#328e6e]">
-          Selamat Datang di Laundry App
-        </h1>
-        <p className="mb-6 text-[#67ae6e] text-lg">
-          Kelola order laundry dengan mudah dan cepat.
-        </p>
+      <section className="flex flex-col items-center justify-center px-6 py-20">
+        <div className="bg-white shadow-xl border border-green-100 rounded-3xl p-10 max-w-xl w-full text-center space-y-6">
+          <div className="flex justify-center items-center text-[#2e7d61]">
+            <Sparkles size={36} className="mr-2" />
+            <h1 className="text-4xl font-extrabold">Selamat Datang</h1>
+          </div>
 
-        <div className="flex flex-col gap-4">
-          {isLoggedIn && (
-            <Link href="/order">
-              <button className="bg-[#328e6e] text-white px-6 py-2 rounded hover:bg-[#67ae6e] transition">
-                Buat Order Sekarang
+          <p className="text-lg text-gray-600 leading-relaxed">
+            Kelola order laundry Anda dengan sistem modern yang simpel, cepat, dan efisien.
+          </p>
+
+          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-2">
+            {isLoggedIn && (
+              <Link href="/order">
+                <button className="bg-[#2e7d61] text-white px-6 py-2 rounded-xl shadow-md hover:bg-[#3f9d74] transition-all">
+                  Buat Order
+                </button>
+              </Link>
+            )}
+            <Link href="/queue">
+              <button className="border border-[#2e7d61] text-[#2e7d61] bg-white px-6 py-2 rounded-xl shadow-md hover:bg-[#e6f6ee] transition-all">
+                Lihat Antrian
               </button>
             </Link>
-          )}
-
-          <Link href="/queue">
-            <button className="bg-[#328e6e] text-white px-6 py-2 rounded hover:bg-[#67ae6e] transition">
-              Lihat Antrian
-            </button>
-          </Link>
+          </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }
