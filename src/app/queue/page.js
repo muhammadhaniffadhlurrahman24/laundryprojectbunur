@@ -67,12 +67,12 @@ export default function QueuePage() {
   
 
   return (
-    <div className="min-h-screen bg-[#dce8b2] text-[#328e6e] p-6">
-      <Link href="/" className="text-[#328e6e] hover:underline mb-4 inline-block">
+    <div className="min-h-screen bg-[#F3FDE8] text-[#27ae60] p-6">
+      <Link href="/" className="text-[#27ae60] hover:text-[#219653] hover:underline mb-4 inline-block">
         ← Kembali
       </Link>
 
-      <h1 className="text-2xl font-bold text-center mb-6">Daftar Antrian</h1>
+      <h1 className="text-3xl font-bold text-center mb-6 text-[#27ae60]">Daftar Antrian</h1>
 
       {loading ? (
         <p className="text-gray-600">Memuat data...</p>
@@ -87,19 +87,19 @@ export default function QueuePage() {
           )}
 
           <div className="overflow-x-auto">
-            <table className="min-w-full bg-white rounded shadow-md">
+            <table className="min-w-full bg-white rounded-lg shadow-lg">
               <thead>
-                <tr className="bg-[#8fc77a] text-left text-white">
-                  <th className="py-2 px-4">Kode Order</th>
-                  <th className="py-2 px-4">Nama</th>
-                  <th className="py-2 px-4">Berat (kg)</th>
-                  <th className="py-2 px-4">Tipe</th>
-                  <th className="py-2 px-4">Order Type</th>
-                  <th className="py-2 px-4">Jenis</th>
-                  <th className="py-2 px-4">Tanggal</th>
-                  <th className="py-2 px-4">Status</th>
-                  {isLoggedIn && <th className="py-2 px-4">Harga</th>}
-                  {isLoggedIn && <th className="py-2 px-4">Aksi</th>}
+                <tr className="bg-[#27ae60] text-left text-white">
+                  <th className="py-3 px-4 font-semibold">Kode Order</th>
+                  <th className="py-3 px-4 font-semibold">Nama</th>
+                  <th className="py-3 px-4 font-semibold">Berat (kg)</th>
+                  <th className="py-3 px-4 font-semibold">Tipe</th>
+                  <th className="py-3 px-4 font-semibold">Order Type</th>
+                  <th className="py-3 px-4 font-semibold">Jenis</th>
+                  <th className="py-3 px-4 font-semibold">Tanggal</th>
+                  <th className="py-3 px-4 font-semibold">Status</th>
+                  {isLoggedIn && <th className="py-3 px-4 font-semibold">Harga</th>}
+                  {isLoggedIn && <th className="py-3 px-4 font-semibold">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
@@ -112,12 +112,12 @@ export default function QueuePage() {
                   });
 
                   return (
-                    <tr key={i} className="border-b hover:bg-[#f1f8e8]">
-                      <td className="py-2 px-4">{order.kodeOrder}</td>
-                      <td className="py-2 px-4">{capitalize(order.nama)}</td>
+                    <tr key={i} className="border-b hover:bg-[#F3FDE8] transition-colors duration-150">
+                      <td className="py-3 px-4">{order.kodeOrder}</td>
+                      <td className="py-3 px-4">{capitalize(order.nama)}</td>
 
                       {/* Berat */}
-                      <td className="py-2 px-4">
+                      <td className="py-3 px-4">
                         {isLoggedIn ? (
                           order.orderType !== 'satuan' ? (
                             <input
@@ -133,7 +133,7 @@ export default function QueuePage() {
                                 newOrders[i].harga = hargaBaru;
                                 setOrders(newOrders);
                               }}
-                              className="w-20 border px-2 py-1 rounded"
+                              className="w-20 border border-[#27ae60] px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-[#27ae60] focus:border-transparent"
                             />
                           ) : (
                             <span className="text-gray-400 italic">-</span>
@@ -143,19 +143,19 @@ export default function QueuePage() {
                         )}
                       </td>
 
-                      <td className="py-2 px-4">{order.tipe}</td>
-                      <td className="py-2 px-4">{capitalize(order.orderType)}</td>
-                      <td className="py-2 px-4">{capitalize(order.jenis)}</td>
-                      <td className="py-2 px-4">{tanggal}, {jam}</td>
+                      <td className="py-3 px-4">{order.tipe}</td>
+                      <td className="py-3 px-4">{capitalize(order.orderType)}</td>
+                      <td className="py-3 px-4">{capitalize(order.jenis)}</td>
+                      <td className="py-3 px-4">{tanggal}, {jam}</td>
 
                       {/* Status */}
-                      <td className="py-2 px-4">
-                        <span className={`px-2 py-1 rounded text-sm ${ 
+                      <td className="py-3 px-4">
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${ 
                           order.status === 'Selesai'
-                            ? 'bg-green-200 text-green-800'
+                            ? 'bg-green-100 text-green-800'
                             : order.status === 'Tinggal Ambil'
-                            ? 'bg-blue-200 text-blue-800'
-                            : 'bg-yellow-200 text-yellow-800'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
                         }`}>
                           {order.status || 'Proses'}
                         </span>
@@ -163,7 +163,7 @@ export default function QueuePage() {
 
                       {/* Harga */}
                       {isLoggedIn && (
-                        <td className="py-2 px-4">
+                        <td className="py-3 px-4">
                           <input
                             type="number"
                             value={order.harga}
@@ -175,19 +175,19 @@ export default function QueuePage() {
                               newOrders[i].harga = hargaBaru;
                               setOrders(newOrders);
                             }}
-                            className="w-28 border px-2 py-1 rounded"
+                            className="w-28 border border-[#27ae60] px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-[#27ae60] focus:border-transparent"
                           />
                         </td>
                       )}
 
                       {/* Aksi */}
                       {isLoggedIn && (
-                        <td className="py-2 px-4 space-y-1">
+                        <td className="py-3 px-4 space-y-2">
                           <select
                             value={order.status || 'Proses'}
                             onChange={(e) => updateOrder(order.kodeOrder, { status: e.target.value })}
                             disabled={updateStatus.loading}
-                            className="w-full border rounded px-1 py-1 mb-1"
+                            className="w-full border border-[#27ae60] rounded px-2 py-1 mb-1 focus:outline-none focus:ring-2 focus:ring-[#27ae60] focus:border-transparent"
                           >
                             <option value="Proses">Proses</option>
                             <option value="Tinggal Ambil">Tinggal Ambil</option>
@@ -201,7 +201,7 @@ export default function QueuePage() {
                                 harga: order.harga
                               })
                             }
-                            className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 text-sm w-full"
+                            className="bg-[#27ae60] hover:bg-[#219653] text-white rounded px-3 py-1.5 text-sm w-full transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#27ae60] focus:ring-offset-2"
                             disabled={updateStatus.loading}
                           >
                             Simpan
